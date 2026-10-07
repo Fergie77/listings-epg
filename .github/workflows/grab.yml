@@ -1,0 +1,46 @@
+name: Grab the guide
+
+# Twice a day: early morning for the day ahead, mid-afternoon to pick up schedule changes.
+on:
+  schedule:
+    - cron: "15 3,15 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  grab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Get the grabber
+        run: |
+          git clone --depth 1 -b master https://github.com/iptv-org/epg.git epg
+          cd epg && npm ci --no-audit --no-fund
+      - name: Choose the channels
+        run: python3 scripts/channels.py epg/sites/sky.com/sky.com.channels.xml > epg/uk.channels.xml
+      - name: Grab two days of listings from sky.com
+        working-directory: epg
+        run: |
+          mkdir -p ../public
+          npm run grab --- --channels=uk.channels.xml --output=../public/guide.xml --gzip=../public/guide.xml.gz --days=2 --maxConnections=10
+          ls -la ../public
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - id: deploy
+        uses: actions/deploy-pages@v4
