@@ -32,8 +32,8 @@ jobs:
           git clone --depth 1 -b master https://github.com/iptv-org/epg.git epg
           cd epg && npm ci --no-audit --no-fund
       - name: Choose the channels
-        run: python3 scripts/channels.py epg/sites/sky.com/sky.com.channels.xml > epg/uk.channels.xml
-      - name: Grab two days of listings from sky.com
+        run: python3 scripts/channels.py epg/sites/sky.com/sky.com.channels.xml epg/sites/mytelly.co.uk/mytelly.co.uk.channels.xml > epg/uk.channels.xml
+      - name: Grab two days of listings
         working-directory: epg
         run: |
           mkdir -p ../public
